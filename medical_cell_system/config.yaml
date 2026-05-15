@@ -1,0 +1,201 @@
+# 医学细胞分类与计数系统配置文件
+
+# 系统配置
+system:
+  name: 医学细胞分类与计数系统
+  version: 1.0.0
+  author: Medical AI Lab
+  description: 基于 YOLOv8 的医学细胞智能检测与计数系统
+
+# 模型配置
+model:
+  # 模型权重文件路径
+  path: runs/segment/train/weights/best.pt
+  
+  # 类别名称 (必须与训练数据集一致, 顺序与 data.yaml 中 names 一致)
+  class_names:
+    - Platelets  # 血小板 (class 0)
+    - RBC  # 红细胞 (class 1)
+    - WBC  # 白细胞 (class 2)
+  
+  # 检测参数
+  conf_threshold: 0.25  # 置信度阈值
+  iou_threshold: 0.45   # NMS IoU 阈值
+  
+  # 模型选择
+  # 可选：yolov8n.pt, yolov8s.pt, yolov8m.pt, yolov8l.pt, yolov8x.pt
+  # n - nano (最快，精度最低)
+  # s - small (快速，精度较低)
+  # m - medium (平衡)
+  # l - large (较慢，高精度)
+  # x - extra large (最慢，最高精度)
+  pretrained: yolov8m.pt
+
+# 训练配置
+training:
+  # 基本参数
+  epochs: 100          # 训练轮数
+  imgsz: 640          # 图像尺寸 (必须是 32 的倍数)
+  batch: 16           # 批次大小
+  device: '0'         # GPU 设备 ('cpu' 或 '0,1,2,3')
+  workers: 8          # 数据加载线程数
+  
+  # 优化器参数
+  optimizer: auto     # 优化器类型 (auto, SGD, Adam, AdamW)
+  lr0: 0.01          # 初始学习率
+  lrf: 0.01          # 最终学习率 (lr0 * lrf)
+  momentum: 0.937    # SGD 动量/Adam beta1
+  weight_decay: 0.0005  # 权重衰减
+  
+  # 热身参数
+  warmup_epochs: 3.0
+  warmup_momentum: 0.8
+  
+  # 损失函数权重
+  box: 7.5           # 边界框损失权重
+  cls: 0.5           # 分类损失权重
+  dfl: 1.5           # 分布焦点损失权重
+  
+  # 训练策略
+  augment: true      # 数据增强
+  multi_scale: true  # 多尺度训练
+  
+  # 缓存
+  cache: 'disk'      # 缓存图像 (true, false, 'ram', 'disk')
+  
+  # 实验管理
+  project: runs/segment  # 项目目录
+  name: train                   # 实验名称
+  exist_ok: false      # 是否覆盖已有实验
+  
+  # 早停
+  patience: 20        # 早停耐心值
+  
+  # 其他
+  seed: 42            # 随机种子
+  amp: true           # 自动混合精度
+  plots: true         # 保存训练图表
+  save: true          # 保存检查点
+  save_period: -1     # 保存频率 (-1 表示只保存最后)
+
+# 推理配置
+inference:
+  # 输出设置
+  save_results: true          # 保存检测结果
+  show_visualization: true    # 显示可视化结果
+  output_dir: results         # 输出目录
+  
+  # 批量检测
+  batch_size: 32              # 批量检测批次大小
+  
+  # 视频检测
+  video_save_format: mp4      # 视频保存格式
+  video_fps: 30              # 视频帧率
+
+# 数据集配置
+dataset:
+  # 数据集根目录
+  root: datasets
+  
+  # 类别名称 (与 data.yaml 一致)
+  class_names:
+    - Platelets
+    - RBC
+    - WBC
+  
+  # 数据划分比例
+  split:
+    train: 0.7
+    val: 0.2
+    test: 0.1
+  
+  # 数据增强
+  augmentation:
+    enabled: true
+    factor: 3  # 增强倍数
+    methods:
+      - flip_horizontal
+      - rotate_90
+      - clahe
+      - gamma
+
+# 导出配置
+export:
+  formats:
+    - onnx      # ONNX 格式
+    - torchscript  # TorchScript 格式
+  
+  # ONNX 导出参数
+  onnx:
+    opset: 12
+    dynamic: false
+  
+  # OpenVINO 导出参数
+  openvino:
+    half_precision: false
+
+# 可视化配置
+visualization:
+  # 颜色配置 (BGR 格式)
+  colors:
+    RBC: [0, 255, 0]      # 绿色
+    WBC: [0, 0, 255]      # 红色
+    Platelets: [255, 0, 0]  # 蓝色
+  
+  # 显示选项
+  show_labels: true       # 显示类别标签
+  show_confidence: true   # 显示置信度
+  box_thickness: 2        # 边界框线宽
+  font_size: 0.6          # 字体大小
+
+# 日志配置
+logging:
+  level: INFO            # 日志级别 (DEBUG, INFO, WARNING, ERROR)
+  save_to_file: true     # 保存到文件
+  log_dir: logs          # 日志目录
+  
+  # 实验跟踪
+  tracking:
+    tensorboard: true
+    wandb: false
+    clearml: false
+    comet: false
+
+# 硬件配置
+hardware:
+  # GPU 配置
+  gpu:
+    enabled: true
+    device_ids: [0]
+    memory_fraction: 0.9
+  
+  # CPU 配置
+  cpu:
+    num_threads: 8
+
+# 性能配置
+performance:
+  # 推理优化
+  inference:
+    half_precision: true    # 半精度推理
+    augment: false          # 测试时增强
+    agnostic_nms: false     # 类别无关 NMS
+  
+  # 批处理
+  batch:
+    enabled: true
+    max_size: 64
+
+# 应用配置
+app:
+  # GUI 配置
+  gui:
+    window_width: 1600
+    window_height: 1000
+    theme: dark
+  
+  # Web API 配置
+  api:
+    enabled: false
+    host: 0.0.0.0
+    port: 8000
